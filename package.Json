@@ -1,0 +1,398 @@
+import Head from "next/head";
+import Script from "next/script";
+
+export default function Home() {
+return (
+<>
+<Head>
+<title>SpectrumLink - Complete Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+</Head>
+
+{/* ===== GLOBAL CSS (inline) ===== */}
+<style jsx global>{`
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+.container { max-width: 500px; margin: 0 auto; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.app-header { text-align: center; margin-bottom: 20px; color: #333; }
+.app-header h1 { color: #4CAF50; margin-bottom: 10px; }
+.tabs { display: flex; margin-bottom: 20px; background: #f5f5f5; border-radius: 10px; padding: 5px; }
+.tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; transition: all 0.3s; }
+.tab.active { background: #4CAF50; color: white; }
+.grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.icon { background: linear-gradient(145deg, #4CAF50, #45a049); color: white; padding: 20px 5px; text-align: center; border-radius: 12px; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; min-height: 60px; display: flex; align-items: center; justify-content: center; word-break: break-word; }
+.icon:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+.icon:active { transform: translateY(0); }
+.sentence-builder { background: #e8f5e8; padding: 15px; border-radius: 10px; margin-bottom: 15px; min-height: 60px; display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.sentence-word { background: #4CAF50; color: white; padding: 8px 12px; border-radius: 20px; font-size: 14px; }
+.sensory-board { display: none; }
+.sensory-btn { background: linear-gradient(145deg, #2196F3, #1976D2); color: white; margin: 8px 0; padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s; border: none; font-size: 16px; }
+.sensory-btn:hover { transform: scale(1.05); }
+.sensory-btn.playing { background: linear-gradient(145deg, #FF9800, #F57C00); animation: pulse 1s infinite; }
+.guardian-portal { display: none; }
+.portal-item { background: #f8f9fa; margin: 10px 0; padding: 15px; border-radius: 10px; border-left: 4px solid #4CAF50; }
+.schedule-container { display: none; }
+.schedule-item { background: white; margin: 8px 0; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; display: flex; justify-content: between; align-items: center; }
+.schedule-time { font-weight: bold; color: #2196F3; margin-right: 10px; }
+.ar-container { display: none; text-align: center; }
+.camera-view { width: 100%; height: 300px; background: #333; border-radius: 10px; margin: 15px 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+.progress-bar { background: #e0e0e0; border-radius: 10px; height: 20px; margin: 10px 0; overflow: hidden; }
+.progress-fill { background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; transition: width 0.5s; }
+@keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+.speaking { animation: pulse 0.5s; background: linear-gradient(145deg, #FF9800, #F57C00) !important; }
+.status-bar { background: #e3f2fd; padding: 10px; border-radius: 10px; margin-bottom: 15px; text-align: center; font-weight: bold; color: #1976D2; }
+.nase-indicator { display: flex; align-items: center; justify-content: center; margin: 10px 0; padding: 10px; border-radius: 10px; background: #fff3cd; }
+.state-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
+.state-calm { background: #4CAF50; } .state-focused { background: #2196F3; } .state-agitated { background: #FF9800; } .state-overwhelmed { background: #f44336; }
+`}</style>
+
+{/* ===== ALL APP JS (inline, loaded after hydration) ===== */}
+<Script id="spectrumlink-app" strategy="afterInteractive" dangerouslySetInnerHTML={{__html: `
+/* ===== STATE & DATA ===== */
+window.SpectrumLink = {
+user: { name: "Alex", state: "calm", attentionLevel: 100, sensoryPreferences: ["heartbeat","blue"] },
+vocabulary: {
+core: [{text:"I",category:"sentence",usage:0},{text:"want",category:"sentence",usage:0},{text:"need",category:"sentence",usage:0},{text:"more",category:"sentence",usage:0}],
+needs: [{text:"Food",category:"need",usage:0,icon:"🍎"},{text:"Drink",category:"need",usage:0,icon:"🥤"},{text:"Bathroom",category:"need",usage:0,icon:"🚽"},{text:"Help",category:"need",usage:0,icon:"🆘"},{text:"Break",category:"need",usage:0,icon:"⏸️"}],
+feelings: [{text:"Happy",category:"feeling",usage:0,icon:"😊"},{text:"Sad",category:"feeling",usage:0,icon:"😢"},{text:"Tired",category:"feeling",usage:0,icon:"😴"},{text:"Hurt",category:"feeling",usage:0,icon:"🤕"},{text:"Excited",category:"feeling",usage:0,icon:"🎉"}],
+activities: [{text:"Music",category:"activity",usage:0,icon:"🎵"},{text:"Toys",category:"activity",usage:0,icon:"🧸"},{text:"Outside",category:"activity",usage:0,icon:"🌳"},{text:"TV",category:"activity",usage:0,icon:"📺"},{text:"Book",category:"activity",usage:0,icon:"📚"}]
+},
+currentSentence: [],
+stats: { daily:{communications:0,sensorySessions:0,newWords:0}, vocabulary:{}, sensory:{}, states:{calm:0,focused:0,agitated:0,overwhelmed:0} },
+schedule:[{time:"8:00 AM",activity:"Breakfast",completed:true},{time:"9:00 AM",activity:"Therapy",completed:true},{time:"10:30 AM",activity:"Play Time",completed:false},{time:"12:00 PM",activity:"Lunch",completed:false},{time:"1:00 PM",activity:"Quiet Time",completed:false}],
+sensoryPatterns:{ heartbeat:{name:"Heartbeat Calm",usage:0,active:false}, rain:{name:"Gentle Rain",usage:0,active:false}, ocean:{name:"Ocean Waves",usage:0,active:false}, purr:{name:"Cat Purr",usage:0,active:false} },
+nase:{
+currentState:"calm", stateHistory:[],
+updateState:function(interactionType){
+const states=["calm","focused","agitated","overwhelmed"];
+if(interactionType==="sensory"&&Math.random()>0.3){this.currentState="calm";}
+else if(interactionType==="communication"&&this.currentState==="calm"){this.currentState="focused";}
+else if(Math.random()>0.7){this.currentState=states[Math.floor(Math.random()*states.length)];}
+this.stateHistory.push({state:this.currentState,timestamp:new Date(),interaction:interactionType});
+this.updateUI();
+},
+updateUI:function(){
+const dot=document.getElementById("stateDot"); const text=document.getElementById("stateText");
+if(!dot||!text) return;
+dot.className="state-dot state-"+this.currentState;
+text.textContent="State: "+this.currentState.charAt(0).toUpperCase()+this.currentState.slice(1);
+window.SpectrumLink.stats.states[this.currentState]++;
+}
+}
+};
+
+/* ===== COMMUNICATION ===== */
+(function(){
+const S = window.SpectrumLink;
+function loadCommunicationGrid(){
+const grid=document.getElementById("communicationGrid");
+grid.innerHTML="";
+Object.values(S.vocabulary).forEach(category=>{
+category.forEach(item=>{
+const button=document.createElement("button");
+button.className="icon";
+button.innerHTML=item.icon?item.icon+" "+item.text:item.text;
+button.onclick=()=>addToSentence(item);
+grid.appendChild(button);
+});
+});
+}
+function addToSentence(wordItem){
+S.currentSentence.push(wordItem); S.stats.daily.communications++; wordItem.usage++;
+updateSentenceBuilder(); S.nase.updateState("communication");
+if(!S.stats.vocabulary[wordItem.text]) S.stats.vocabulary[wordItem.text]=0;
+S.stats.vocabulary[wordItem.text]++;
+}
+function updateSentenceBuilder(){
+const builder=document.getElementById("sentenceBuilder");
+builder.innerHTML="";
+if(S.currentSentence.length===0){ builder.innerHTML='<span style="color:#666;">Sentence will appear here...</span>'; return; }
+S.currentSentence.forEach((word,idx)=>{
+const span=document.createElement("span");
+span.className="sentence-word"; span.textContent=word.text;
+span.onclick=()=>removeFromSentence(idx);
+builder.appendChild(span);
+});
+}
+function removeFromSentence(index){ S.currentSentence.splice(index,1); updateSentenceBuilder(); }
+function speakSentence(){
+if(S.currentSentence.length===0) return;
+const sentence=S.currentSentence.map(w=>w.text).join(" ");
+if("speechSynthesis" in window){ const u=new SpeechSynthesisUtterance(sentence); u.rate=0.8; window.speechSynthesis.speak(u); }
+const status=document.getElementById("statusBar");
+if(status) status.textContent=\`🗣️ Said: "\${sentence}" | Total today: \${S.stats.daily.communications}\`;
+if(window.updateGuardianPortal) window.updateGuardianPortal();
+}
+function clearSentence(){ S.currentSentence=[]; updateSentenceBuilder(); }
+
+window.loadCommunicationGrid=loadCommunicationGrid;
+window.addToSentence=addToSentence;
+window.updateSentenceBuilder=updateSentenceBuilder;
+window.removeFromSentence=removeFromSentence;
+window.speakSentence=speakSentence;
+window.clearSentence=clearSentence;
+})();
+
+/* ===== SENSORY ===== */
+(function(){
+const S = window.SpectrumLink;
+function toggleSensory(pattern, ev){
+const sensory=S.sensoryPatterns[pattern];
+const target=ev&&ev.target?ev.target:null;
+if(sensory.active){
+sensory.active=false; if(target) target.classList.remove("playing");
+const status=document.getElementById("statusBar"); if(status) status.textContent="✅ Sensory activity stopped";
+} else {
+Object.values(S.sensoryPatterns).forEach(p=>p.active=false);
+document.querySelectorAll(".sensory-btn.playing").forEach(b=>b.classList.remove("playing"));
+sensory.active=true; sensory.usage++; S.stats.daily.sensorySessions++; if(target) target.classList.add("playing");
+const status=document.getElementById("statusBar"); if(status) status.textContent=\`🎵 Playing: \${sensory.name} | Focus and breathe...\`;
+S.nase.updateState("sensory");
+}
+if(window.updateGuardianPortal) window.updateGuardianPortal();
+}
+function startBreathingExercise(){
+const status=document.getElementById("statusBar");
+if(status) status.textContent="🌀 Follow the breath: IN... 2... 3... 4... OUT... 2... 3... 4...";
+S.nase.updateState("sensory");
+}
+function playColorSound(color, ev){
+const sounds={ red:"Deep drum", orange:"Warm synth", yellow:"Bright bell", green:"Forest sounds", blue:"Ocean waves", purple:"Mystical chime" };
+const status=document.getElementById("statusBar");
+if(status) status.textContent=\`🎨 \${color.toUpperCase()} color | Sound: \${sounds[color]}\`;
+const target=ev&&ev.target?ev.target:null; if(target){ target.classList.add("speaking"); setTimeout(()=>target.classList.remove("speaking"),1000); }
+S.nase.updateState("sensory");
+}
+window.toggleSensory=toggleSensory;
+window.startBreathingExercise=startBreathingExercise;
+window.playColorSound=playColorSound;
+})();
+
+/* ===== SCHEDULE ===== */
+(function(){
+const S = window.SpectrumLink;
+function loadSchedule(){
+const scheduleList=document.getElementById("scheduleList"); scheduleList.innerHTML="";
+S.schedule.forEach((item,index)=>{
+const div=document.createElement("div"); div.className="schedule-item";
+div.innerHTML=\`
+<div>
+<div class="schedule-time">\${item.time}</div>
+<div>\${item.activity}</div>
+</div>
+<div style="margin-left:auto;">\${item.completed?"✅":"⏳"}</div>\`;
+div.onclick=()=>toggleScheduleItem(index); scheduleList.appendChild(div);
+});
+}
+function toggleScheduleItem(index){ S.schedule[index].completed=!S.schedule[index].completed; loadSchedule(); }
+function addScheduleItem(){
+const time=prompt("Enter time (e.g., 2:00 PM):"); const activity=prompt("Enter activity:");
+if(time&&activity){ S.schedule.push({time,activity,completed:false}); loadSchedule(); }
+}
+window.loadSchedule=loadSchedule; window.toggleScheduleItem=toggleScheduleItem; window.addScheduleItem=addScheduleItem;
+})();
+
+/* ===== AR SIM ===== */
+(function(){
+function simulateObjectRecognition(){
+const objects=["Chair","Table","Window","Door","Toy","Book","Computer","Plant"];
+const detected=[]; for(let i=0;i<3+Math.floor(Math.random()*3);i++){ const obj=objects[Math.floor(Math.random()*objects.length)]; if(!detected.includes(obj)) detected.push(obj); }
+const label=document.getElementById("detectedObjects"); if(label) label.textContent=detected.join(", ");
+const status=document.getElementById("statusBar"); if(status) status.textContent=\`👁️ AR detected: \${detected.join(", ")}\`;
+}
+window.simulateObjectRecognition=simulateObjectRecognition;
+})();
+
+/* ===== GUARDIAN PORTAL ===== */
+(function(){
+const S = window.SpectrumLink;
+function updateGuardianPortal(){
+const topWords=Object.entries(S.stats.vocabulary).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w])=>w).join(", ");
+const tw=document.getElementById("topWords"); if(tw) tw.textContent=topWords||"No data yet";
+const sensoryStats=Object.entries(S.sensoryPatterns).map(([_,d])=>\`\${d.name}: \${d.usage} times\`).join(", ");
+const ss=document.getElementById("sensoryStats"); if(ss) ss.textContent=sensoryStats;
+const totalStates=Object.values(S.stats.states).reduce((a,b)=>a+b,1);
+const calmPct=Math.round((S.stats.states.calm/totalStates)*100);
+const focusedPct=Math.round((S.stats.states.focused/totalStates)*100);
+const agitatedPct=Math.round((S.stats.states.agitated/totalStates)*100);
+const na=document.getElementById("naseAnalysis"); if(na) na.textContent=\`Calm: \${calmPct}% | Focused: \${focusedPct}% | Agitated: \${agitatedPct}%\`;
+const dr=document.getElementById("dailyReport"); if(dr) dr.textContent=\`\${S.stats.daily.communications} communications, \${S.stats.daily.sensorySessions} sensory breaks, \${S.stats.daily.newWords} new words\`;
+const progress=Math.min(100,S.stats.daily.communications*5);
+const bar=document.getElementById("commProgress"); if(bar) bar.style.width=progress+"%";
+const ps=document.getElementById("progressStats"); if(ps) ps.textContent=progress+"% increase in spontaneous requests";
+}
+function addNewWord(){
+const word=prompt("Enter new word to add:");
+if(word&&word.trim()){
+S.vocabulary.activities.push({text:word.trim(),category:"activity",usage:0,icon:"✨"});
+S.stats.daily.newWords++; if(window.loadCommunicationGrid) window.loadCommunicationGrid();
+const status=document.getElementById("statusBar"); if(status) status.textContent=\`✅ Added new word: "\${word}"\`;
+updateGuardianPortal();
+}
+}
+function generateReport(){
+const report=\`
+WEEKLY REPORT - SpectrumLink
+
+Total Communications: \${S.stats.daily.communications * 7}
+Sensory Sessions: \${S.stats.daily.sensorySessions * 7}
+New Words Learned: \${S.stats.daily.newWords}
+
+Top Words: \${document.getElementById("topWords") ? document.getElementById("topWords").textContent : ""}
+State Analysis: \${document.getElementById("naseAnalysis") ? document.getElementById("naseAnalysis").textContent : ""}
+
+Great progress this week! 🎉\`;
+alert(report);
+}
+window.updateGuardianPortal=updateGuardianPortal;
+window.addNewWord=addNewWord;
+window.generateReport=generateReport;
+})();
+
+/* ===== APP INIT & TABS ===== */
+(function(){
+function initializeApp(){
+if(window.loadCommunicationGrid) window.loadCommunicationGrid();
+if(window.loadSchedule) window.loadSchedule();
+if(window.updateGuardianPortal) window.updateGuardianPortal();
+if(window.SpectrumLink && window.SpectrumLink.nase) window.SpectrumLink.nase.updateUI();
+setInterval(()=>{ if(window.SpectrumLink && window.SpectrumLink.nase){ window.SpectrumLink.nase.updateState("ambient"); } },10000);
+}
+function showTab(tabName, ev){
+const ids=["communicationTab","sensoryTab","scheduleTab","arTab","guardianTab"];
+ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display="none"; });
+document.querySelectorAll(".tab").forEach(tab=>tab.classList.remove("active"));
+const targetTab=document.getElementById(tabName+"Tab"); if(targetTab) targetTab.style.display="block";
+if(ev && ev.target) ev.target.classList.add("active");
+if(tabName==="ar" && window.simulateObjectRecognition){ window.simulateObjectRecognition(); }
+}
+window.initializeApp=initializeApp;
+window.showTab=showTab;
+window.onload=initializeApp;
+})();
+`}} />
+
+{/* ===== APP MARKUP ===== */}
+<div className="container">
+<div className="app-header">
+<h1>🎯 SpectrumLink</h1>
+<p>Adaptive Communication & Sensory Support</p>
+</div>
+
+{/* NASE State Indicator */}
+<div className="nase-indicator">
+<div className="state-dot state-calm" id="stateDot"></div>
+<span id="stateText">State: Calm &amp; Ready</span>
+</div>
+
+<div className="status-bar" id="statusBar">
+👤 User: Alex | 🕒 Ready to communicate!
+</div>
+
+<div className="tabs">
+<div className="tab active" onClick={(e)=>window.showTab('communication', e)}>💬 Talk</div>
+<div className="tab" onClick={(e)=>window.showTab('sensory', e)}>🎵 Sensory</div>
+<div className="tab" onClick={(e)=>window.showTab('schedule', e)}>📅 Schedule</div>
+<div className="tab" onClick={(e)=>window.showTab('ar', e)}>👁️ AR View</div>
+<div className="tab" onClick={(e)=>window.showTab('guardian', e)}>📊 Guardian</div>
+</div>
+
+{/* Communication Tab */}
+<div id="communicationTab" className="tab-content">
+<div className="sentence-builder" id="sentenceBuilder">
+<span style={{ color: "#666" }}>Sentence will appear here...</span>
+</div>
+
+<div style={{ marginBottom: 15 }}>
+<button className="sensory-btn" style={{ background: "#FF9800", padding: "8px 15px", marginRight: 10 }}
+onClick={() => window.speakSentence()}>
+🗣️ Speak Sentence
+</button>
+<button className="sensory-btn" style={{ background: "#f44336", padding: "8px 15px" }}
+onClick={() => window.clearSentence()}>
+❌ Clear
+</button>
+</div>
+
+<div className="grid-container" id="communicationGrid"></div>
+</div>
+
+{/* Sensory Tab */}
+<div id="sensoryTab" className="sensory-board">
+<h3>🧘 Sensory Regulation</h3>
+<div className="sensory-btn" onClick={(e)=>window.toggleSensory('heartbeat', e)}>💓 Heartbeat Calm</div>
+<div className="sensory-btn" onClick={(e)=>window.toggleSensory('rain', e)}>🌧️ Gentle Rain</div>
+<div className="sensory-btn" onClick={(e)=>window.toggleSensory('ocean', e)}>🌊 Ocean Waves</div>
+<div className="sensory-btn" onClick={(e)=>window.toggleSensory('purr', e)}>😸 Cat Purr</div>
+<div className="sensory-btn" onClick={() => window.startBreathingExercise()}>🌀 Breathing Guide</div>
+
+<h3 style={{ marginTop: 20 }}>🌈 Color-Sound Therapy</h3>
+<div className="grid-container">
+<div className="icon" style={{ background: "#FF5252" }} onClick={(e)=>window.playColorSound('red', e)}>🔴 Red</div>
+<div className="icon" style={{ background: "#FF9800" }} onClick={(e)=>window.playColorSound('orange', e)}>🟠 Orange</div>
+<div className="icon" style={{ background: "#FFEB3B" }} onClick={(e)=>window.playColorSound('yellow', e)}>🟡 Yellow</div>
+<div className="icon" style={{ background: "#4CAF50" }} onClick={(e)=>window.playColorSound('green', e)}>🟢 Green</div>
+<div className="icon" style={{ background: "#2196F3" }} onClick={(e)=>window.playColorSound('blue', e)}>🔵 Blue</div>
+<div className="icon" style={{ background: "#9C27B0" }} onClick={(e)=>window.playColorSound('purple', e)}>🟣 Purple</div>
+</div>
+</div>
+
+{/* Visual Schedule Tab */}
+<div id="scheduleTab" className="schedule-container">
+<h3>📅 Today&apos;s Schedule</h3>
+<div id="scheduleList"></div>
+<button className="sensory-btn" style={{ background: "#9C27B0", marginTop: 15 }} onClick={() => window.addScheduleItem()}>
+➕ Add Activity
+</button>
+</div>
+
+{/* AR View Tab */}
+<div id="arTab" className="ar-container">
+<h3>👁️ AR World View</h3>
+<div className="camera-view">📱 Camera View - Object Recognition Active</div>
+<div id="arLabels">
+<div className="portal-item">
+<strong>Detected Objects:</strong><br />
+<span id="detectedObjects">Chair, Table, Window</span>
+</div>
+</div>
+<button className="sensory-btn" onClick={() => window.simulateObjectRecognition()}>🔍 Scan Environment</button>
+</div>
+
+{/* Guardian Portal Tab */}
+<div id="guardianTab" className="guardian-portal">
+<h3>📊 Insights &amp; Analytics</h3>
+<div className="portal-item">
+<strong>Communication Progress</strong>
+<div className="progress-bar">
+<div className="progress-fill" id="commProgress" style={{ width: "65%" }}></div>
+</div>
+<div id="progressStats">65% increase in spontaneous requests</div>
+</div>
+<div className="portal-item">
+<strong>Most Used Words Today:</strong><br />
+<span id="topWords">Help, Food, Music</span>
+</div>
+<div className="portal-item">
+<strong>Sensory Usage Patterns:</strong><br />
+<span id="sensoryStats">Heartbeat Calm: 5 times</span>
+</div>
+<div className="portal-item">
+<strong>NASE State Analysis:</strong><br />
+<span id="naseAnalysis">Calm: 85% | Focused: 10% | Agitated: 5%</span>
+</div>
+<div className="portal-item">
+<strong>Daily Report:</strong><br />
+<span id="dailyReport">12 communications, 3 sensory breaks, 2 new words</span>
+</div>
+<button className="sensory-btn" style={{ background: "#607D8B", marginTop: 10 }} onClick={() => window.addNewWord()}>
+➕ Add Custom Word
+</button>
+<button className="sensory-btn" style={{ background: "#795548", marginTop: 10 }} onClick={() => window.generateReport()}>
+📄 Generate Weekly Report
+</button>
+</div>
+</div>
+</>
+);
+}
